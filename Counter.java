@@ -15,7 +15,7 @@ public class Counter {
 	public static int rgb_white = white.getRGB();
 	public static Color black = new Color(0, 0, 0);
 	public static int rgb_black = black.getRGB();
-	public static Color pink = new Color(179,128,139);
+	public static Color pink = new Color(179,126,164);
 	public static int rgb_pink = pink.getRGB();
 
 	public static int index = 0;
@@ -28,20 +28,35 @@ public class Counter {
 			//READ FILE
 			BufferedImage image = ImageIO.read(new File(args[0]));
 
+			//DECLARING VARIABLES
+			BufferedImage img_threshold;
+			BufferedImage img_erosion;
+			BufferedImage img_dilution;
+			BufferedImage img_regionLabel;
+
 			//THRESHOLDING THE IMAGE
-			BufferedImage img_threshold = Thresholding(image);
+			img_threshold = Thresholding(image);
 			ImageIO.write(img_threshold, "png", new File("step_1_tresholding.jpg"));
 
 			//EROSION THE IMAGE
-			BufferedImage img_erosion = img_threshold;
+			img_erosion = img_threshold;
 			for (index = 0; index < 2; index++) {
 
 				img_erosion = Erosion(img_erosion);
 				ImageIO.write(img_erosion, "png", new File("step_2_erosion_"+index+".jpg"));
 			}
 
-			//BufferedImage img_erosion = Erosion(img_threshold);
-			//ImageIO.write(img_erosion, "png", new File("step_2_erosion.jpg"));
+			//DILUTION THE IMAGE
+			img_dilution = img_erosion;
+			for (index = 0; index < 2; index++) {
+
+				img_dilution = Dilution(img_dilution);
+				ImageIO.write(img_dilution, "png", new File("step_3_dilution_"+index+".jpg"));
+			}
+
+			//REGION LABELING THE IMAGE
+			img_regionLabel = RegionLabeling(img_dilution);
+			ImageIO.write(img_threshold, "png", new File("step_4_regionLabel.jpg"));
 		}
 		catch(Exception eCounter) {
 
@@ -58,26 +73,29 @@ public class Counter {
 		final int THRESHOLD = 25;
 		int height = image.getHeight();
 		int width = image.getWidth();
-		int color;
+		int pixelColor;
 
 		//FOR EVERY PIXEL
 		for (int y = 0; y < height; y++){
 			for (int x = 0; x < width; x++){  
 
 				//GET THE COLOUR OF THE PIXEL
-				color = image.getRGB(x, y);
+				pixelColor = image.getRGB(x, y);
 
 				//ACCESSING COLOURS
-				int red = (color & 0x00ff0000) >> 16;
-				int green = (color & 0x0000ff00) >> 8;
-				int blue  =  color & 0x000000ff;
+				int red = (pixelColor & 0x00ff0000) >> 16;
+				int green = (pixelColor & 0x0000ff00) >> 8;
+				int blue  =  pixelColor & 0x000000ff;
 
+				//IF PIXEL COLOUR IS GREATER OR EQUEAL TO THE TRESHOLD
 				if(red >= THRESHOLD || blue >= THRESHOLD || green >= THRESHOLD){
 
+					//MAKE IT FOREGROUND (WHITE)
 					image = setpixel(image, x, y, rgb_white, "Thresholding");
 				}
 				else {
 
+					//MAKE IT BACKGROUDN (BLACK)
 					image = setpixel(image, x, y, rgb_black, "Thresholding");
 				}
 			}
@@ -93,37 +111,37 @@ public class Counter {
 
 		int height = image.getHeight();
 		int width = image.getWidth();
-		int color;
+		int pixelColor;
 
 		//FOR EVERY PIXEL (WHITE TO PINK)
 		for (int y = 0; y < height; y++){
 			for (int x = 0; x < width; x++){ 
 
 				//GET THE COLOUR OF THE PIXEL
-				color = image.getRGB(x, y);
+				pixelColor = image.getRGB(x, y);
 
 				//CHECK IF ITS A BACKGROUND (BLACK)
-				if (color == rgb_black) {
+				if (pixelColor == rgb_black) {
 
-					//CHECK IF UP A PHOTO
+					//CHECK IF UP IS WITHIN THE IMAGE BOUNDERY
 					if (!(y-1 < 0)) {
 
 						image = setpixel(image, x, y-1, rgb_pink, "Erosion");
 					}
 
-					//CHECK IF LEFT IS A PHOTO
+					//CHECK IF LEFT IS WITHIN THE IMAGE BOUNDERY
 					if (!(x-1 < 0)) {
 
 						image = setpixel(image, x-1, y, rgb_pink, "Erosion");
 					}
 
-					//CHECK IF RIGHT IS A PHOTO
+					//CHECK IF RIGHT IS WITHIN THE IMAGE BOUNDERY
 					if (!(x+1 >= width)) {
 
 						image = setpixel(image, x+1, y, rgb_pink, "Erosion");
 					}
 
-					//CHECK IF DOWN IS A PHOTO
+					//CHECK IF DOWN IS WITHIN THE IMAGE BOUNDERY
 					if (!(y+1 >= height)) {
 
 						image = setpixel(image, x, y+1, rgb_pink, "Erosion");
@@ -137,10 +155,10 @@ public class Counter {
 			for (int x = 0; x < width; x++){ 
 
 				//GET THE COLOUR OF THE PIXEL
-				color = image.getRGB(x, y);
+				pixelColor = image.getRGB(x, y);
 
 				//CHECK IF ITS A PIXEL TO SHRINK (PINK)
-				if (color == rgb_pink) {
+				if (pixelColor == rgb_pink) {
 
 					image = setpixel(image, x, y, rgb_black, "ColorChange");
 				}
@@ -150,47 +168,71 @@ public class Counter {
 		return image;
 	}
 
-		public static BufferedImage Dilution(BufferedImage _image) {
+	public static BufferedImage Dilution(BufferedImage _image) {
 
 		//DECLARING VARIABLES
 		BufferedImage image = _image;
 
 		int height = image.getHeight();
 		int width = image.getWidth();
-		int color;
+		int pixelColor;
 
 		//FOR EVERY PIXEL (WHITE TO PINK)
 		for (int y = 0; y < height; y++){
 			for (int x = 0; x < width; x++){ 
 
 				//GET THE COLOUR OF THE PIXEL
-				color = image.getRGB(x, y);
+				pixelColor = image.getRGB(x, y);
 
-				//CHECK IF ITS A CELL (WHITE)
-				if (color == rgb_white) {
+				//CHECK IF ITS A FOREGROUND (WHITE)
+				if (pixelColor == rgb_white) {
 
-					//CHECK IF UP A PHOTO
+					//CHECK IF UP IS WITHIN THE IMAGE BOUNDERY
 					if (!(y-1 < 0)) {
 
-						image = setpixel(image, x, y-1, rgb_pink, "Erosion");
+						image = setpixel(image, x, y-1, rgb_pink, "Dilution");
 					}
 
-					//CHECK IF LEFT IS A PHOTO
+					//CHECK IF LEFT TOP CORNER IS WITHIN THE IMAGE BOUNDERY
+					if (!((x-1 < 0) || (y-1 < 0))) {
+
+						image = setpixel(image, x-1, y-1, rgb_pink, "Dilution");
+					}
+
+					//CHECK IF LEFT IS WITHIN THE IMAGE BOUNDERY
 					if (!(x-1 < 0)) {
 
-						image = setpixel(image, x-1, y, rgb_pink, "Erosion");
+						image = setpixel(image, x-1, y, rgb_pink, "Dilution");
 					}
 
-					//CHECK IF RIGHT IS A PHOTO
-					if (!(x+1 >= width)) {
+					//CHECK IF LEFT BOTTOM CORNER IS WITHIN THE IMAGE BOUNDERY
+					if (!((x-1 < 0) || (y+1 >= height))) {
 
-						image = setpixel(image, x+1, y, rgb_pink, "Erosion");
+						image = setpixel(image, x-1, y+1, rgb_pink, "Dilution");
 					}
 
-					//CHECK IF DOWN IS A PHOTO
+					//CHECK IF DOWN IS WITHIN THE IMAGE BOUNDERY
 					if (!(y+1 >= height)) {
 
-						image = setpixel(image, x, y+1, rgb_pink, "Erosion");
+						image = setpixel(image, x, y+1, rgb_pink, "Dilution");
+					}
+
+					//CHECK IF RIGHT BOTTOM CORNER IS WITHIN THE IMAGE BOUNDERY
+					if (!((x+1 >= width) || (y+1 >= height))) {
+
+						image = setpixel(image, x+1, y+1, rgb_pink, "Dilution");
+					}
+
+					//CHECK IF RIGHT IS WITHIN THE IMAGE BOUNDERY
+					if (!(x+1 >= width)) {
+
+						image = setpixel(image, x+1, y, rgb_pink, "Dilution");
+					}
+
+					//CHECK IF RIGHT TOP CORNER IS WITHIN THE IMAGE BOUNDERY
+					if (!((x+1 >= width) || (y-1 < 0))) {
+
+						image = setpixel(image, x+1, y-1, rgb_pink, "Dilution");
 					}
 				}
 			}
@@ -201,12 +243,12 @@ public class Counter {
 			for (int x = 0; x < width; x++){ 
 
 				//GET THE COLOUR OF THE PIXEL
-				color = image.getRGB(x, y);
+				pixelColor = image.getRGB(x, y);
 
 				//CHECK IF ITS A PIXEL TO SHRINK (PINK)
-				if (color == rgb_pink) {
+				if (pixelColor == rgb_pink) {
 
-					image = setpixel(image, x, y, rgb_black, "ColorChange");
+					image = setpixel(image, x, y, rgb_white, "ColorChange");
 				}
 			}
 		}
@@ -214,25 +256,131 @@ public class Counter {
 		return image;
 	}
 
-	public static BufferedImage setpixel(BufferedImage _image, int x, int y, int color, String method) {
+	public static BufferedImage RegionLabeling(BufferedImage _image) {
 
 		//DECLARING VARIABLES
 		BufferedImage image = _image;
 
+		int height = image.getHeight();
+		int width = image.getWidth();
+		int pixelColor;
+
+		int label = rgb_pink;
+		int count = 0;
+
+		//FOR EVERY PIXEL
+		for (int y = 0; y < height; y++){
+			for (int x = 0; x < width; x++){
+
+				System.out.println("Label: " + count + " Colour: " + label); 
+
+				//GET THE COLOUR OF THE PIXEL
+				pixelColor = image.getRGB(x, y);
+
+				//CHECK IF ITS A FOREGROUND (WHITE)
+				if (pixelColor == rgb_white) {
+
+					image = FloodFill(image, x, y, label);
+
+					count++;
+					label += 10000;
+				}
+			}
+		}
+
+		return image;
+	}
+
+	public static BufferedImage FloodFill(BufferedImage _image, int _x, int _y, int _color) {
+
+		//DECLARING VARIABLES
+		BufferedImage image = _image;
+
+		Stack<Integer> xCoord = new Stack<Integer>();
+		Stack<Integer> yCoord = new Stack<Integer>();
+		int height = image.getHeight();
+		int width = image.getWidth();
+		int pixelColor;
+		int x = _x;
+		int y = _y;
+
+		xCoord.push(x); yCoord.push(y);
+
+		while (!xCoord.empty()) {
+
+			x = xCoord.pop();
+			y = yCoord.pop();
+
+			//GET THE COLOUR OF THE PIXEL
+			pixelColor = image.getRGB(x, y);
+
+			//CHECK IF ITS A FOREGROUND (WHITE)
+			if (pixelColor == rgb_white) {
+
+				//FILL THE PIXEL
+				image = setpixel(image, x, y, _color, "ColorChange");
+				
+				//CHECK IF UP IS WITHIN THE IMAGE BOUNDERY
+				if (!(y-1 < 0)) {
+
+					xCoord.push(x); yCoord.push(y-1);
+				}
+
+				//CHECK IF LEFT IS WITHIN THE IMAGE BOUNDERY
+				if (!(x-1 < 0)) {
+
+					xCoord.push(x-1); yCoord.push(y);
+				}
+
+				//CHECK IF RIGHT IS WITHIN THE IMAGE BOUNDERY
+				if (!(x+1 >= width)) {
+
+					xCoord.push(x+1); yCoord.push(y);
+				}
+
+				//CHECK IF DOWN IS WITHIN THE IMAGE BOUNDERY
+				if (!(y+1 >= height)) {
+
+					xCoord.push(x); yCoord.push(y+1);
+				}	
+			}
+		}
+
+		return image;
+	}
+
+	public static BufferedImage setpixel(BufferedImage _image, int x, int y, int _color, String method) {
+
+		//DECLARING VARIABLES
+		BufferedImage image = _image;
+		int pixelColor;
+
 		if ((method.compareTo("Thresholding") == 0) || (method.compareTo("ColorChange") == 0)) {
 
-			image.setRGB(x, y, color);
+			image.setRGB(x, y, _color);
 		}
 		else if (method.compareTo("Erosion") == 0) {
 
 			//GET THE COLOUR OF THE PIXEL
-			color = image.getRGB(x, y);
+			pixelColor = image.getRGB(x, y);
 
 			//IF ITS WHITE
-			if (color == rgb_white) {
+			if (pixelColor == rgb_white) {
 
 				// CHANGE TO PINK
-				image.setRGB(x, y, rgb_pink);
+				image.setRGB(x, y, _color);
+			}
+		}
+		else if (method.compareTo("Dilution") == 0) {
+
+			//GET THE COLOUR OF THE PIXEL
+			pixelColor = image.getRGB(x, y);
+
+			//IF ITS WHITE
+			if (pixelColor == rgb_black) {
+
+				// CHANGE TO PINK
+				image.setRGB(x, y, _color);
 			}
 		}
 
