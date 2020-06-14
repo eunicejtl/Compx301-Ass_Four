@@ -322,12 +322,47 @@ class Counter extends Canvas {
 
 		//DECLARING VARIABLES
 		BufferedImage image = _image;
+
+		ArrayList<Integer> histogram = new ArrayList<Integer>();
+
+		int height = image.getHeight();
+		int width = image.getWidth();
 		int pixelColor;
-		int threshold = getMeanHistogram(image);
+		int totalRGB = 0;
+		int meanValue = 0;
+		int threshold = 0;
 
 		//FOR EVERY PIXEL
-		for (int y = 0; y < img_height; y++){
-			for (int x = 0; x < img_width; x++){  
+		for (int y = 0; y < height; y++){
+			for (int x = 0; x < width; x++){  
+
+				//GET THE COLOUR OF THE PIXEL
+				pixelColor = image.getRGB(x, y);
+
+				//ACCESSING COLOURS
+				int red = (pixelColor & 0x00ff0000) >> 16;
+				int green = (pixelColor & 0x0000ff00) >> 8;
+				int blue  =  pixelColor & 0x000000ff;
+
+				//Get all the RGB values of all pixels
+				histogram.add(red + green + blue);
+			}
+		}
+
+		//Total all RGB values
+		for(int i: histogram) {
+
+			totalRGB += i;
+		}
+
+		//Get the mean value
+		meanValue = totalRGB/histogram.size();
+		//Divide mean value to get a good threshold value
+		threshold = meanValue/2;
+
+		//FOR EVERY PIXEL
+		for (int y = 0; y < height; y++){
+			for (int x = 0; x < width; x++){  
 
 				//GET THE COLOUR OF THE PIXEL
 				pixelColor = image.getRGB(x, y);
