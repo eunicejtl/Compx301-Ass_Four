@@ -24,9 +24,8 @@ class Counter extends Canvas {
 	public static Color pink = new Color(179,126,164);
 	public static int rgb_pink = pink.getRGB();
 
-	public static int index = 0;
+	public static int count = 1;
 	public static int[] colorArray;
-
 	public static int img_height;
 	public static int img_width;
 	
@@ -39,6 +38,7 @@ class Counter extends Canvas {
 
 			//DECLARING VARIABLES
 			BufferedImage img_cell;
+			int index = 0;
 			img_height = image.getHeight();
 			img_width = image.getWidth();
 
@@ -87,12 +87,10 @@ class Counter extends Canvas {
 
 			//SETTING GUI
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-			//frame.setLocationRelativeTo(null);
-			frame.setSize(1700,1000);
+			frame.setExtendedState(JFrame.MAXIMIZED_BOTH); 
 
 			frame.add(gui);
 			frame.setVisible(true);
-
 		}
 		catch(Exception eCounter) {
 
@@ -105,6 +103,8 @@ class Counter extends Canvas {
 
 		//SETTING COLOUR
 		Color blue = new Color(125,163,179);
+		Color greyishpink = new Color(179,143,149);
+		Color lightgreen = new Color(179,175,107);
 
 		//SETTING IMAGE
 		Image img_original = new ImageIcon("step_0_original.jpg").getImage();
@@ -117,66 +117,100 @@ class Counter extends Canvas {
 		
 		//SETTING UP VARIABLES
 		Canvas canvas = this;
-		int xCoord = 10;
-		int yCoord = 10;
+		int xCoord = 110;
+		int yCoord = 130;
+
+		//DISPLAY CELL COUNT
+		String cellCount = "Cell Count: " + count;
+		g.setColor(greyishpink);
+		g.setFont(new Font("helvetica", Font.BOLD, 30));
+		g.drawString(cellCount, (((img_width*3)/2)+70), 70);
 
 		//DISPLAYING IMAGES
 		DisplayImage_pl(g, canvas, img_original, blue, xCoord, yCoord, "Step 0: Original");
+
+		xCoord = xCoord + img_width + 28 + 20;
+		yCoord = yCoord;
+		DisplayImage_pl(g, canvas, img_threshold, greyishpink, xCoord, yCoord, "Step 1: Thresholding");
+
+		xCoord = xCoord + img_width + 28 + 20;
+		yCoord = yCoord;
+		DisplayImage_pl(g, canvas, img_erosion_1, blue, xCoord, yCoord, "Step 2: Erosion (twice)");
+
+		xCoord = 110;
+		yCoord = 130 + img_height + 28 + 40;
+		DisplayImage_pl(g, canvas, img_dilution_1, greyishpink, xCoord, yCoord, "Step 3: Dilution (twice)");
+
+		xCoord = xCoord + img_width + 28 + 20;
+		yCoord = yCoord;
+		DisplayImage_pl(g, canvas, img_regionLabel, blue, xCoord, yCoord, "Step 4: Region Counting (Fillflood)");
 	}
 
 	public static void DisplayImage_pl(Graphics g, Canvas canvas, Image display_image, Color color, 
 		int xCoord, int yCoord, String method) {
 
-		/*//DECLARING VARIABLES
-		int wBlock_add = (dSize*2)+10;
-		int wImage_add = dSize+5;
-		int hImage_add = yCoord+5;
-
-		//SETTING TOP BORDER
-		g.setColor(color);
-		g.drawRect(xCoord, yCoord, (img_width+wBlock_add), dSize);
-		g.fillRect(xCoord+2,yCoord+2, (img_width+wBlock_add)-4, fSize);*/
-
 		//DECLARING VARIABLES
 		int block_size = 10;
+		int block_space = 4;
+
 		int block_wide;
 		int block_height;
+		int block_xCoord;
+		int block_yCoord;
 
-		int dSize = 10;
-		int fSize = 6;
+		// SETTING UP BORDER //
+		
+		//(TOP BORDER)		
+		block_wide = img_width + (block_space*2) + (block_size*2);
+		block_height = block_size;
+		block_xCoord = xCoord;
+		block_yCoord = yCoord;
+		drawBorder(g, color, block_xCoord, block_yCoord, block_wide, block_height, method);
 
-		int wImage_add = dSize+5;
-		int hImage_add = yCoord+dSize+5;
-
-		//SETTING UP BORDER
-		//(TOP BORDER)
-		drawBorder(g, color, xCoord, yCoord, dSize, block_size);
 		//(BOTTOM BORDER)
-		drawBorder(g, color, xCoord, (hImage_add+img_height+5), dSize, fSize);
+		block_wide = img_width + (block_space*2) + (block_size*2);
+		block_height = block_size;
+		block_xCoord = xCoord;
+		block_yCoord = yCoord + block_size + (block_space*2) + img_height;
+		drawBorder(g, color, block_xCoord, block_yCoord, block_wide, block_height, null);
+
 		//(LEFT BORDER)
-		drawBorder(g, color, xCoord, (hImage_add+img_height+5), dSize, fSize);
+		block_wide = block_size;
+		block_height = img_height;
+		block_xCoord = xCoord;
+		block_yCoord = yCoord + block_size + block_space;
+		drawBorder(g, color, block_xCoord, block_yCoord, block_wide, block_height, null);
+
+		//(RIGHT BORDER)
+		block_wide = block_size;
+		block_height = img_height;
+		block_xCoord = xCoord + block_size + (block_space*2) + img_width;
+		block_yCoord = yCoord + block_size + block_space;
+		drawBorder(g, color, block_xCoord, block_yCoord, block_wide, block_height, null);
 
 		//DISPLAYING THE IMAGE
-		g.drawImage(display_image, (xCoord+wImage_add), hImage_add, canvas);
+		g.drawImage(display_image, (xCoord+block_size+block_space), (yCoord+block_size+block_space), canvas);
 	}
 
-	public static void drawBorder(Graphics g, Color color, int xCoord, int yCoord, int block_wide, int block_height) {
+	public static void drawBorder(Graphics g, Color color, int xCoord, int yCoord, int block_wide, int block_height, 
+		String method) {
 
-		//DECLARING VARIABLES
-		//int wBlock_add = (dSize*2)+10;
-
-		//SETTING TOP BORDER
 		g.setColor(color);
 		g.drawRect(xCoord, yCoord, block_wide, block_height);
 		g.fillRect(xCoord+2,yCoord+2, block_wide-4, block_height-4);
 
-		// //SETTING TOP BORDER
-		// g.setColor(color);
-		// g.drawRect(xCoord, yCoord, (img_width+wBlock_add), dSize);
-		// g.fillRect(xCoord+2,yCoord+2, (img_width+wBlock_add)-4, fSize);
+		if (method != null) {
+
+			Color dark_blue = new Color(61,90,102);
+			int middle = block_wide/3;
+			int string_w = middle/method.length();
+			
+			g.setColor(dark_blue);
+			g.setFont(new Font("helvetica", Font.PLAIN, 12));
+			g.drawString(method, (xCoord+middle+string_w), yCoord-10);
+		}	
 	}
 
-	//Get histogram
 	public static int getMeanHistogram(BufferedImage _image) {
 
 		//DECLARING VARIABLES
@@ -233,15 +267,12 @@ class Counter extends Canvas {
 		int width = image.getWidth();		
 		int pixelColor;
 
+		//GET ALL COLOR IN THE IMAGE AND PUT IT IN AN ARRAY THEN SORT (ASCENDING)
 		colorArray = image.getRGB(0, 0, width, height, colorArray, 0, width);
 		Arrays.sort(colorArray);
 
 		int median;
 		int _index = 0;
-
-		int _frequency = 1;
-		int _fdensity = 0;
-		int _xWidth = 0;
 
 		double _f2requency = 1;
 		double _f2density = 0;
@@ -252,7 +283,6 @@ class Counter extends Canvas {
 		
 			while (colorArray[_index] == colorArray[_index+1]) {
 				
-				_frequency++;
 				_f2requency++;
 				_index++;
 			}
@@ -260,18 +290,6 @@ class Counter extends Canvas {
 			System.out.println("-------------------");
 			System.out.println("Colorpixel: " + colorArray[_index]);
 			System.out.println("-------------------");
-
-			System.out.println("Frequency: " + _frequency);
-			System.out.println("Width: " + (_index - _xWidth));
-			System.out.println("Frequency Density: " + (_frequency*(_index - _xWidth)));
-
-			_fdensity += _frequency*(_index - _xWidth);
-			_xWidth += _index - _xWidth;
-
-			System.out.println("Total Frequency Density: " + _fdensity);
-			System.out.println("Total Width: " + _xWidth);
-
-			System.out.println("");
 
 			DecimalFormat df2 = new DecimalFormat("#.##");
 			df2.setRoundingMode(RoundingMode.UP);
@@ -487,9 +505,7 @@ class Counter extends Canvas {
 		//DECLARING VARIABLES
 		BufferedImage image = _image;
 		int pixelColor;
-
 		int label = rgb_pink;
-		int count = 1;
 
 		//FOR EVERY PIXEL
 		for (int y = 0; y < img_height; y++){
