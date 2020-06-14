@@ -8,6 +8,9 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+
 public class Threshold1 {
 
 	//SETTING COLOuR AND CONVERTING TO INT
@@ -19,7 +22,7 @@ public class Threshold1 {
 	public static int rgb_pink = pink.getRGB();
 
 	public static int index = 0;
-
+	public static int[] colorArray;
 	
 	public static void main(String[] args) {
 
@@ -58,9 +61,30 @@ public class Threshold1 {
 			//Mean value
 			threshold = allPixels/100;
 
+			colorArray = image.getRGB(0, 0, width, height, colorArray, 0, width);
+
 			System.out.println("All pixels: " + allPixels);
 			System.out.println("Number of pixels: " + count);
 			System.out.println("New Threshold: " + threshold);
+			System.out.println("");
+
+			// for (int i = 0; i < colorArray.length; i++) {
+
+			// 	System.out.println("Pixel " + i + " : " + colorArray[i]);	
+			// }
+
+			// System.out.println("");
+
+			Arrays.sort(colorArray);
+
+			for (int i = 0; i < colorArray.length; i++) {
+
+				System.out.println("Pixel " + i + " : " + colorArray[i]);	
+			}
+
+			System.out.println("");
+
+			//double test_threshold = getMedianHistogram(image);
 
 			//FOR EVERY PIXEL
 			for (int y = 0; y < height; y++){
@@ -172,5 +196,79 @@ public class Threshold1 {
 			}
 		}
 		return histogram;
+	}
+
+	public static double getMedianHistogram(BufferedImage _image) {
+
+		//DECLARING VARIABLES
+		BufferedImage image = _image;
+		int height = image.getHeight();
+		int width = image.getWidth();
+		int pixelColor;
+
+		double median;
+		int _index = 0;
+
+		int _frequency = 1;
+		int _fdensity = 0;
+		int _xWidth = 0;
+
+		double _f2requency = 1;
+		double _f2density = 0;
+		double _w2idth = 0;
+		double _x2totalW = 0;
+
+		while (_index < colorArray.length-1) {
+		
+			while (colorArray[_index] == colorArray[_index+1]) {
+				
+				_frequency++;
+				_f2requency++;
+				_index++;
+			}
+
+			//System.out.println("Index " + _index + " Colorpixel " + colorArray[_index] + " : " + _frequency);
+
+			System.out.println("Colorpixel: " + colorArray[_index]);
+
+			System.out.println("-------------------");
+			
+			System.out.println("Frequency: " + _frequency);
+			System.out.println("Width: " + (_index - _xWidth));
+			System.out.println("Frequency Density: " + (_frequency*(_index - _xWidth)));
+
+			_fdensity += _frequency*(_index - _xWidth);
+			_xWidth += _index - _xWidth;
+
+			System.out.println("Total Frequency Density: " + _fdensity);
+			System.out.println("Total Width: " + _xWidth);
+
+			System.out.println("-------------------");
+
+			DecimalFormat df2 = new DecimalFormat("#.##");
+			df2.setRoundingMode(RoundingMode.UP);
+			_f2requency = 126/(double)_f2requency;
+			_w2idth = 126/(double)(_index - _x2totalW);
+
+			System.out.println("126/Frequency: " + df2.format(_f2requency));
+			System.out.println("126/Width: " + df2.format(_w2idth));
+			System.out.println("126/Frequency Density: " +  df2.format(_f2requency*_w2idth));
+
+			_f2density += _f2requency*_w2idth;
+			_x2totalW += 126/(double)(_index - _x2totalW);
+			
+			System.out.println("Total Another Frequency Density: " +  df2.format(_f2density));
+			System.out.println("Total Width: " +  df2.format(_x2totalW));
+			System.out.println("");
+
+			_index++;
+			_frequency = 1;
+			_f2requency = 1;
+		}
+
+		median = (int)_f2density*8;
+		System.out.println("Median : " + median);
+
+		return median;
 	}
 }
